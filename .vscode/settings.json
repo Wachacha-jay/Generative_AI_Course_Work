@@ -1,0 +1,6 @@
+{
+  "python.defaultIntepreterPath": ".venv/bin/python",
+  "files.associations": {
+    "*.jac": "jac"
+  }
+}
