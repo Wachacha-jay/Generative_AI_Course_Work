@@ -1,7 +1,0 @@
-{
-  "python.defaultIntepreterPath": ".venv/bin/python",
-  "files.associations": {
-    "*.jac": "jac"
-  },
-  "jac.pythonPath": ".venv/bin/python"
-}
