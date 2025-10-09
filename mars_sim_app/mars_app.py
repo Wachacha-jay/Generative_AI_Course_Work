@@ -7,9 +7,9 @@ Run: streamlit run mars_app.py
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
-from jaclang import jac
 import sys
 import os
+from mars_client import get_mars_client
 
 # Page configuration
 st.set_page_config(
@@ -51,84 +51,84 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize Jac module
+# Initialize Mars Colony client
 @st.cache_resource
-def load_jac_module():
-    """Load the Jac colony simulation module"""
+def get_client():
+    """Get Mars Colony client (API or direct)"""
     try:
-        # Import the Jac module - adjust path as needed
-        jac_module = jac.load_module("colony_simulation.jac")
-        return jac_module
+        # Try API client first, fallback to direct execution
+        return get_mars_client(use_api=True)
     except Exception as e:
-        st.error(f"Failed to load Jac module: {e}")
-        return None
+        st.warning(f"API client failed, using direct execution: {e}")
+        return get_mars_client(use_api=False)
 
 # Initialize colony state
-def initialize_colony(jac_module):
+def initialize_colony(client):
     """Initialize the colony graph"""
     if 'colony_initialized' not in st.session_state:
-        # The Jac entry point builds the colony
         st.session_state.colony_initialized = True
         st.session_state.day = 1
         st.session_state.events_log = []
     return True
 
-# Extract state from Jac graph
-def get_colony_state(jac_module):
-    """Extract current colony state from Jac graph"""
+# Extract state from colony
+def get_colony_state(client):
+    """Extract current colony state"""
     try:
-        # Create and spawn state extractor walker
-        extractor = jac_module.StateExtractor()
-        # The walker traverses the graph and collects data
-        state = extractor.colony_state
-        return state
+        response = client.get_colony_state()
+        if response and response.get('status') == 'success':
+            return response.get('data', {})
+        else:
+            st.error("Failed to get colony state")
+            return None
     except Exception as e:
         st.error(f"Failed to extract state: {e}")
         return None
 
-# Execute actions via Jac walkers
-def execute_action(jac_module, action_type, params=None):
-    """Execute a game action using Jac walkers"""
+# Execute actions via client
+def execute_action(client, action_type, params=None):
+    """Execute a game action using Mars client"""
     try:
         if action_type == "advance_day":
-            walker = jac_module.DaySimulator()
-            # Spawn walker to simulate a day
-            events = walker.events if hasattr(walker, 'events') else []
-            st.session_state.day += 1
-            st.session_state.events_log.extend(events)
-            return True
+            response = client.advance_day()
+            if response and response.get('status') == 'success':
+                st.session_state.day += 1
+                events = response.get('events', [])
+                st.session_state.events_log.extend(events)
+                return True
+            return False
         
         elif action_type == "send_diplomat":
             target = params.get('target', 'Freedom Crater')
-            walker = jac_module.DiplomatAction(target_camp=target)
-            # Walker negotiates with rebel camp
-            success = walker.success if hasattr(walker, 'success') else False
-            if success:
-                st.session_state.events_log.append(f"🕊️ Diplomat reduced tension with {target}")
-            return success
+            response = client.send_diplomat(target)
+            if response and response.get('status') == 'success':
+                st.session_state.events_log.append(f"🕊️ {response.get('message', 'Diplomat sent')}")
+                return True
+            return False
         
         elif action_type == "trade":
             trade_type = params.get('trade_type', 'food')
-            walker = jac_module.TradeAction(trade_type=trade_type, amount=10)
-            success = walker.success if hasattr(walker, 'success') else False
-            if success:
-                st.session_state.events_log.append(f"💱 Traded for {trade_type}")
-            return success
+            amount = params.get('amount', 10)
+            response = client.trade_resources(trade_type, amount)
+            if response and response.get('status') == 'success':
+                st.session_state.events_log.append(f"💱 {response.get('message', 'Trade completed')}")
+                return True
+            return False
         
         elif action_type == "resolve_dispute":
             habitat = params.get('habitat', 'Habitat Alpha')
-            walker = jac_module.DisputeResolver(target_habitat=habitat)
-            resolved = walker.resolved if hasattr(walker, 'resolved') else False
-            if resolved:
-                st.session_state.events_log.append(f"✅ Resolved dispute at {habitat}")
-            return resolved
+            response = client.resolve_dispute(habitat)
+            if response and response.get('status') == 'success':
+                st.session_state.events_log.append(f"✅ {response.get('message', 'Dispute resolved')}")
+                return True
+            return False
         
         elif action_type == "mine":
-            walker = jac_module.MiningAction()
-            gained = walker.resource_gained if hasattr(walker, 'resource_gained') else 0
-            if gained > 0:
-                st.session_state.events_log.append(f"⛏️ Mined {gained} units of water ice")
-            return True
+            response = client.mine_resources()
+            if response and response.get('status') == 'success':
+                st.session_state.events_log.append(f"⛏️ {response.get('message', 'Resources mined')}")
+                return True
+            return False
         
         return False
     except Exception as e:
@@ -352,14 +352,14 @@ def create_mars_map(state):
 def main():
     """Main Streamlit application"""
     
-    # Load Jac module
-    jac_module = load_jac_module()
-    if not jac_module:
-        st.error("❌ Failed to load Jac module. Please check the file path.")
+    # Get Mars Colony client
+    client = get_client()
+    if not client:
+        st.error("❌ Failed to initialize Mars Colony client.")
         return
     
     # Initialize colony
-    initialize_colony(jac_module)
+    initialize_colony(client)
     
     # Title
     st.title("🔴 Mars Colony Control Center")
@@ -374,7 +374,7 @@ def main():
         st.subheader("🕹️ Time Controls")
         
         if st.button("▶️ Advance Day", use_container_width=True, type="primary"):
-            execute_action(jac_module, "advance_day")
+            execute_action(client, "advance_day")
             st.rerun()
         
         if st.button("🔄 Reset Colony", use_container_width=True):
@@ -406,13 +406,13 @@ def main():
         if st.button("🚀 Execute Action", use_container_width=True, type="secondary"):
             success = False
             if action == "Send Diplomat":
-                success = execute_action(jac_module, "send_diplomat", params)
+                success = execute_action(client, "send_diplomat", params)
             elif action == "Trade with Rebels":
-                success = execute_action(jac_module, "trade", params)
+                success = execute_action(client, "trade", params)
             elif action == "Resolve Dispute":
-                success = execute_action(jac_module, "resolve_dispute", params)
+                success = execute_action(client, "resolve_dispute", params)
             elif action == "Mine Resources":
-                success = execute_action(jac_module, "mine")
+                success = execute_action(client, "mine")
             elif action == "Research Technology":
                 st.session_state.events_log.append("🔬 Research project initiated")
                 success = True
@@ -439,7 +439,7 @@ def main():
         """)
     
     # Get current state
-    state = get_colony_state(jac_module)
+    state = get_colony_state(client)
     if not state:
         st.error("❌ Failed to retrieve colony state")
         return

@@ -12,139 +12,125 @@ source mars_venv/bin/activate  # On Windows: mars_venv\Scripts\activate
 pip install jaclang streamlit plotly
 ```
 
-### Step 2: Project Structure
-Create the following directory structure:
+## Architecture Overview
+
+The integration uses a **hybrid approach** with two options:
+
+### Option 1: JAC API Server (Recommended)
+- JAC serves as a REST API server using `jac serve`
+- Python client communicates with JAC via HTTP requests
+- Better separation of concerns and scalability
+
+### Option 2: Direct JAC Execution (Fallback)
+- Direct execution of JAC files via subprocess
+- Simpler but less scalable approach
+- Used when API server is not available
+
+## Files Structure
 
 ```
-mars_colony_project/
-│
-├── colony_simulation.jac          # Main Jac game logic
-├── mars_app.py                    # Streamlit frontend
-├── requirements.txt               # Python dependencies
-└── README.md                      # Documentation
+mars_sim_app/
+├── mars_api.jac          # JAC API server with walkers
+├── mars_client.py        # Python client for JAC communication
+├── mars_app.py          # Streamlit frontend application
+├── run_mars_app.py      # Launcher script
+├── walkers.jac          # JAC walkers (backend logic)
+├── nodes.jac            # JAC node definitions
+├── edges.jac            # JAC edge definitions
+└── requirements.txt     # Python dependencies
 ```
 
-### Step 3: Create Files
+## How It Works
 
-#### `requirements.txt`
-```
-jaclang>=0.7.0
-streamlit>=1.28.0
-plotly>=5.17.0
-```
+### JAC Backend (mars_api.jac)
+- Defines API walkers that handle HTTP requests
+- Each walker corresponds to a game action
+- Returns JSON responses to the frontend
 
-#### `colony_simulation.jac`
-Use the complete Jac code provided in the "Complete Jac-Streamlit Mars Colony" artifact.
+### Python Client (mars_client.py)
+- `MarsColonyClient`: Communicates with JAC API server
+- `DirectJacClient`: Fallback for direct JAC execution
+- Handles all communication between Streamlit and JAC
 
-#### `mars_app.py`
-Use the complete Python code provided in the "Streamlit App (mars_app.py)" artifact.
+### Streamlit Frontend (mars_app.py)
+- Interactive web interface
+- Uses the Python client to communicate with JAC
+- Displays colony state and handles user actions
 
----
+## API Endpoints
 
-## 🎮 Running the Application
+The JAC API server provides these endpoints:
 
-### Method 1: Standard Launch
+- `GET /state` - Get current colony state
+- `POST /advance_day` - Advance simulation by one day
+- `POST /diplomat` - Send diplomat to rebel camp
+- `POST /trade` - Trade resources
+- `POST /dispute` - Resolve habitat dispute
+- `POST /mine` - Mine resources
+
+## Running the Application
+
+### Method 1: Using the Launcher (Recommended)
 ```bash
-# From your project directory
-streamlit run mars_app.py
+python run_mars_app.py
 ```
 
-### Method 2: With Custom Port
+### Method 2: Manual Setup
 ```bash
+# Terminal 1: Start JAC API server
+jac serve mars_api.jac --port 8000
+
+# Terminal 2: Start Streamlit app
 streamlit run mars_app.py --server.port 8501
 ```
 
-### Method 3: Development Mode
+### Method 3: Direct Execution (Fallback)
 ```bash
-# Auto-reload on file changes
-streamlit run mars_app.py --server.runOnSave true
+# If JAC serve is not available
+streamlit run mars_app.py --server.port 8501
 ```
 
----
+## Benefits of This Integration
 
-## 🗺️ How It Works: The Jac-Streamlit Bridge
+1. **Separation of Concerns**: JAC handles game logic, Streamlit handles UI
+2. **Scalability**: API server can be deployed separately
+3. **Maintainability**: Clear boundaries between frontend and backend
+4. **Flexibility**: Can switch between API and direct execution
+5. **Real-time Updates**: Streamlit automatically refreshes on state changes
 
-### Architecture Overview
+## Troubleshooting
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                  USER INTERFACE                         │
-│                  (Streamlit Web App)                    │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐            │
-│  │ Controls │  │   Map    │  │ Metrics  │            │
-│  └──────────┘  └──────────┘  └──────────┘            │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     ▼
-           ┌─────────────────┐
-           │  Jac Import     │ (jac_import)
-           │  Python Bridge  │
-           └────────┬────────┘
-                    │
-                    ▼
-      ┌─────────────────────────────┐
-      │    JAC GRAPH ENGINE         │
-      │                             │
-      │  ┌─────┐    ┌─────┐        │
-      │  │Node │◄──►│Node │        │
-      │  └─────┘    └─────┘        │
-      │     ▲          ▲            │
-      │     │          │            │
-      │  ┌──┴──────────┴──┐        │
-      │  │   Walkers      │        │
-      │  │  (Game Logic)  │        │
-      │  └────────────────┘        │
-      └─────────────────────────────┘
+### JAC Not Found
+```bash
+# Install JAC language
+pip install jaclang
 ```
 
-### Data Flow Example
-
-#### 1. **User Clicks "Send Diplomat"**
-```python
-# Streamlit button clicked
-if st.button("Send Diplomat"):
-    execute_action(jac_module, "send_diplomat", {'target': 'Freedom Crater'})
+### Streamlit Not Found
+```bash
+# Install Streamlit
+pip install streamlit
 ```
 
-#### 2. **Python Calls Jac Walker**
-```python
-def execute_action(jac_module, action_type, params):
-    walker = jac_module.DiplomatAction(target_camp=params['target'])
-    # Walker is spawned and traverses the graph
-    success = walker.success
-    return success
-```
+### API Connection Issues
+- Check if JAC server is running on port 8000
+- The app will automatically fall back to direct execution
+- Check firewall settings if running on different machines
 
-#### 3. **Jac Walker Traverses Graph**
-```jac
-walker DiplomatAction {
-    has target_camp: str;
-    has success: bool = False;
+### Port Conflicts
+- Change ports in the configuration files
+- JAC API: Edit `mars_client.py` (default: 8000)
+- Streamlit: Edit `run_mars_app.py` (default: 8501)
 
-    can negotiate with entry {
-        visit [-->];  # Visit all connected nodes
-    }
+## Development
 
-    can reduce_hostility with RebelCamp entry {
-        if here.name == self.target_camp {
-            here.hostility -= 15;  # Modify node state
-            self.success = True;
-        }
-    }
-}
-```
+To modify the integration:
 
-#### 4. **State Extracted Back to Streamlit**
-```python
-# Extract updated state
-extractor = jac_module.StateExtractor()
-new_state = extractor.colony_state
+1. **Add new game actions**: Update `mars_api.jac` with new walkers
+2. **Update client**: Add corresponding methods in `mars_client.py`
+3. **Update UI**: Add new buttons/controls in `mars_app.py`
 
-# Update visualization
-st.plotly_chart(create_mars_map(new_state))
-```
-
----
+The integration is designed to be easily extensible for new features.
 
 ## 🎯 Key Features & Usage
 

@@ -1,143 +1,6 @@
-"""
-Complete Mars Colony Simulation with Streamlit Integration
-Enhanced with position tracking, real-time updates, and interactive features
-"""
-
+import from nodes {ColonyHub, Habitat, PowerPlant, Greenhouse, MiningStation, ResearchLab, MediationCenter, TradePost, RebelCamp, ScavengerOutpost, NeutralZone}
+import from edges {PowerLine, SupplyRoute, DataLink, TradeRoute}
 import streamlit as st;
-import plotly.graph_objects as go;
-import random;
-import from datetime { datetime }
-
-# ==================== NODE DEFINITIONS ====================
-
-node ColonyHub {
-    has name: str;
-    has x: float = 0.0;
-    has y: float = 0.0;
-    has power: int = 100;
-    has oxygen: int = 100;
-    has population: int = 5;
-    has food: int = 50;
-    has morale: int = 75;
-    has water: int = 60;
-    has medicine: int = 30;
-    has faction_loyalty: str = "united";
-    has trade_goods: dict = {"tech": 5, "tools": 10, "fuel": 20};
-}
-
-node Habitat {
-    has name: str;
-    has x: float;
-    has y: float;
-    has capacity: int = 10;
-    has occupied: int = 0;
-    has comfort: int = 50;
-    has dispute_level: int = 0;
-}
-
-node PowerPlant {
-    has name: str;
-    has x: float;
-    has y: float;
-    has output: int = 50;
-    has efficiency: int = 100;
-    has fuel: int = 100;
-}
-
-node Greenhouse {
-    has name: str;
-    has x: float;
-    has y: float;
-    has food_production: int = 20;
-    has water_usage: int = 10;
-    has crops_growing: list = [];
-}
-
-node MiningStation {
-    has name: str;
-    has x: float;
-    has y: float;
-    has resources: dict = {"iron": 0, "water": 0, "minerals": 0};
-    has mining_rate: int = 5;
-}
-
-node ResearchLab {
-    has name: str;
-    has x: float;
-    has y: float;
-    has projects: list = [];
-    has tech_level: int = 1;
-}
-
-node MediationCenter {
-    has name: str;
-    has x: float;
-    has y: float;
-    has active_disputes: list = [];
-    has resolved_disputes: int = 0;
-    has peace_treaties: list = [];
-}
-
-node TradePost {
-    has name: str;
-    has x: float;
-    has y: float;
-    has inventory: dict = {"food": 20, "water": 15, "medicine": 10, "tech": 5};
-    has prices: dict = {"food": 2, "water": 3, "medicine": 5, "tech": 10};
-    has recent_trades: list = [];
-}
-
-node RebelCamp {
-    has name: str;
-    has x: float;
-    has y: float;
-    has population: int = 8;
-    has ideology: str;
-    has resources: dict = {"food": 15, "water": 20, "weapons": 5, "salvage": 30};
-    has hostility: int = 50;
-    has demands: list = [];
-}
-
-node ScavengerOutpost {
-    has name: str;
-    has x: float;
-    has y: float;
-    has scavengers: int = 5;
-    has salvage_quality: str = "mixed";
-    has discovered_items: list = [];
-    has trade_preference: str;
-}
-
-node NeutralZone {
-    has name: str;
-    has x: float;
-    has y: float;
-    has safety_level: int = 70;
-    has factions_present: list = [];
-}
-
-# ==================== EDGE DEFINITIONS ====================
-
-edge PowerLine {
-    has capacity: int = 25;
-    has active: bool = True;
-}
-
-edge SupplyRoute {
-    has distance: int;
-    has condition: str = "good";
-    has danger_level: int = 10;
-}
-
-edge DataLink {
-    has bandwidth: int = 100;
-}
-
-edge TradeRoute {
-    has established: bool = False;
-    has trust_level: int = 50;
-    has tariff: int = 0;
-}
 
 # ==================== WALKER DEFINITIONS ====================
 
@@ -435,10 +298,10 @@ walker ColonyBuilder {
         mine = MiningStation(name="Mining Outpost Delta", x=4.0, y=-3.0);
         lab = ResearchLab(name="Research Lab Gamma", x=3.0, y=3.0);
         
-        hub +[PowerLine(capacity=50)]+> power;
-        hub +[SupplyRoute(distance=100)]+> greenhouse;
-        hub +[SupplyRoute(distance=500)]+> mine;
-        hub +[DataLink(bandwidth=100)]+> lab;
+        hub <+:PowerLine(capacity=50):+> power;
+        hub <+:SupplyRoute(distance=100):+> greenhouse;
+        hub <+:SupplyRoute(distance=500):+> mine;
+        hub <+:DataLink(bandwidth=100):+> lab;
         
         # Peace infrastructure
         mediation = MediationCenter(
@@ -451,7 +314,7 @@ walker ColonyBuilder {
         
         # Trade post
         trade = TradePost(name="Central Trade Hub", x=1.0, y=-1.0);
-        hub +[TradeRoute(established=True, trust_level=70)]+> trade;
+        hub <+:TradeRoute(established=True, trust_level=70):+> trade;
         
         # Rebel camps
         rebel1 = RebelCamp(
@@ -474,8 +337,8 @@ walker ColonyBuilder {
             demands=["Medicine access", "Water rights"]
         );
         
-        hub +[SupplyRoute(distance=1000, danger_level=60)]+> rebel1;
-        hub +[SupplyRoute(distance=1500, danger_level=80)]+> rebel2;
+        hub <+:SupplyRoute(distance=1000, danger_level=60):+> rebel1;
+        hub <+:SupplyRoute(distance=1500, danger_level=80):+> rebel2;
         
         # Scavenger outpost
         scav = ScavengerOutpost(
@@ -485,16 +348,16 @@ walker ColonyBuilder {
             scavengers=5,
             trade_preference="food"
         );
-        hub +[SupplyRoute(distance=800)]+> scav;
+        hub <+:SupplyRoute(distance=800):+> scav;
         
         # Neutral zone
         neutral = NeutralZone(name="Deimos Trading Post", x=0.0, y=-6.0, safety_level=75);
-        hub +[TradeRoute(established=True)]+> neutral;
-        rebel1 +[TradeRoute(established=False, trust_level=30)]+> neutral;
+        hub <+:TradeRoute(established=True):+> neutral;
+        rebel1 <+:TradeRoute(established=False, trust_level=30):+> neutral;
         trade ++> neutral;
         
         # Store hub globally
-        global colony_graph = hub;
+        colony_graph = hub;
     }
 }
 
@@ -508,7 +371,7 @@ walker StreamlitApp {
         if not st_initialized {
             builder = ColonyBuilder();
             root spawn builder;
-            glob st_initialized = True;
+            st_initialized = True;
         }
         
         # Extract current state
@@ -520,7 +383,9 @@ walker StreamlitApp {
         st.title("🔴 Mars Colony Control Center");
         
         # Create columns
-        col1, col2 = st.columns([2, 1]);
+        columns = st.columns(2);
+        col1 = columns[0];
+        col2 = columns[1];
         
         with col1 {
             st.subheader("🗺️ Colony Map");
@@ -538,8 +403,6 @@ walker StreamlitApp {
         }
     }
 }
-
-# ==================== ENTRY POINT ====================
 
 with entry {
     print("🔴 Mars Colony Simulation - Streamlit Integration Ready");
