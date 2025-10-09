@@ -1,4 +1,4 @@
-I have created a comprehensive employee management system in Jac with a creative twist - let's make it a space station crew management system! This will demonstrate proper separation of concerns and Jac's unique features.
+I have created a comprehensive employee management system in Jac with a creative twist making it a space station crew management system! This will demonstrate proper separation of concerns and Jac's unique features.
 
 **Space Station Crew Management System** in Jac! This creative employee program demonstrates proper software architecture with:
 
@@ -30,12 +30,12 @@ I have created a comprehensive employee management system in Jac with a creative
 
 ## 🎯 Key Jac Language Features Demonstrated
 
-- Object-oriented design with interfaces
-- Implementation separation (`:obj:Type:can:method`)
-- Proper imports between modules
-- Test structure
+- Object Spartial oriented design with interfaces
+- Implementation separation (`:obj:Type:def:method`) and implementaion on the .impl file
+- Proper imports between modules with the main entry to the program on the main
+- Test structure- complete tests with jac special way of running tests jac test
 - Global constants
 - Type annotations
-- Modern syntax with `let`, `has`, `can`
+- Modern syntax with `let`, `has`, `def`
 
 Run `main.jac` to see the full crew management system in action!
