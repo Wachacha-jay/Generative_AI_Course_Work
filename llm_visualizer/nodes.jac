@@ -3,48 +3,41 @@
 node Token {
     has text: str;
     has token_id: int;
-    has embedding: list[float];
+    has embedding: list;
     has position: int;
 }
 
+
 node Layer {
     has layer_num: int;
-    has layer_type: str;  # "attention" or "ffn" or "norm"
+    has layer_type: str;
     has input_dim: int;
     has output_dim: int;
-    has num_heads: int = 0;
-    has position: tuple = (0, 0, 0);
-    has is_active: bool = False;
+    has num_heads: int;
+    has position: tuple;
+    has is_active: bool;
 }
+
 
 node AttentionHead {
     has head_num: int;
     has parent_layer: int;
-    has query_weight: list[list[float]];
-    has key_weight: list[list[float]];
-    has value_weight: list[list[float]];
-    has attention_scores: list[list[float]];
+    has attention_scores: list;
 }
+
 
 node TransformerBlock {
     has block_num: int;
     has num_layers: int;
-    has has_attention: bool = True;
-    has has_ffn: bool = True;
-    has has_norm: bool = True;
+    has has_attention: bool;
+    has has_ffn: bool;
 }
+
 
 node Model {
     has name: str;
     has config: dict;
-    has current_stage: str = "Introduction";
-    has input_text: str = "The future of AI is";
-    has animation_speed: float = 1.0;
-}
-
-node StageNode {
-    has stage_name: str;
-    has description: str;
-    has complexity_level: str;
-    has is_completed: bool = False;
+    has current_stage: str;
+    has input_text: str;
+    has animation_speed: float;
 }
