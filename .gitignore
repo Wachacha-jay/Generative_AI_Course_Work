@@ -9,6 +9,7 @@ __pycache__/
 # VS Code settings
 .vscode/
 fraud_detection
+Agentic-AI/
 
 # PyCharm / JetBrains
 .idea/
