@@ -1,61 +1,195 @@
-# Codebase Genius
+# Codebase Genius 
 
-An autonomous multi-agent system that generates high-quality markdown documentation for GitHub repositories with clear prose and explanatory diagrams.
+An intelligent multi-agent system that autonomously analyzes codebases and generates comprehensive documentation with explanatory diagrams using both Jac and Python components.
 
-## Features
+##  Features
 
-- **Multi-language Support**: Detects and analyzes Python, Jac, JavaScript, Java, C++, Rust, and Go codebases
-- **Intelligent Analysis**: Uses Tree-sitter for accurate code parsing and builds Code Context Graphs (CCG)
-- **Interactive UI**: Streamlit-based web interface for easy repository analysis
-- **REST API**: HTTP interface for programmatic access
-- **Visual Documentation**: Generates diagrams showing code relationships
+- **Dual Architecture**
+  - **Jac Backend**: Powerful agent-based analysis with native API exposure
+  - **Python Frontend**: Intuitive Streamlit interface for user interaction
+- **Multi-language Support**: Analyzes Python, Jac, JavaScript, Java, C++, Rust, and Go codebases
+- **Intelligent Analysis**: Tree-sitter parsing + Code Context Graphs (CCG)
+- **API Integration**: RESTful endpoints for each analysis component
+- **Visual Documentation**: Auto-generated diagrams of code relationships
+- **Real-time Processing**: Live analysis updates and progress tracking
 
-## Architecture
+##  Architecture
 
-The system consists of four main agents:
+The system combines two powerful architectures:
 
-1. **Code Genius (Supervisor)** - Orchestrates the workflow and coordinates other agents
-2. **Repo Mapper** - Clones repositories and generates file-tree representations
-3. **Code Analyzer** - Performs deep code analysis and builds relationship graphs
-4. **DocGenie** - Synthesizes final markdown documentation with diagrams
+### Jac Backend (API Server)
+1. **Repository Node**: Base entity storing repository information
+2. **repo_mapper Walker**: Maps repository structure (Port 8000)
+3. **code_analyzer Walker**: Deep code analysis (Port 8001)
+4. **doc_generator Walker**: Documentation generation (Port 8002)
+5. **doc_saver Walker**: Documentation persistence (Port 8003)
 
-## Quick Start
+### Python Frontend
+1. **Streamlit UI**: User-friendly web interface
+2. **API Client**: Communicates with Jac backend services
+3. **Visualization Engine**: Renders code relationships
+4. **Documentation Renderer**: Displays and formats documentation
 
-1. Install dependencies:
+##  Quick Start
+
+The project offers two implementation paths:
+
+### Method 1: Pure Jac Implementation
+Run the application using pure Jac implementation:
 ```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-2. Run the Streamlit UI:
+# Launch Jac version
+cd jac_version
+jac run genius.jac
+```
+This runs a self-contained Jac implementation with its own UI and processing logic.
+
+### Method 2: Python-Jac Hybrid Implementation
+Run the application using the Python frontend with Jac backend:
+
+1. Start the FastAPI backend:
 ```bash
-streamlit run frontend/app.py
+# Terminal 1
+python main.py
 ```
 
-3. Or run the API server:
+2. Start the Jac services:
 ```bash
-python -m uvicorn main:app --reload --port 8000
+# Terminal 2
+cd agentic_codebase_genius
+jac run genius.jac
 ```
 
-## Usage
+3. Launch the Streamlit frontend:
+```bash
+# Terminal 3
+cd frontend
+streamlit run app.py
+```
 
-1. Open the Streamlit UI in your browser
+##  Usage
+
+### Via Web Interface
+1. Open http://localhost:8501 in your browser
 2. Enter a GitHub repository URL
-3. Select the target language (auto-detection available)
+3. Configure analysis options:
+   - Select programming language (or auto-detect)
+   - Choose documentation features
+   - Enable/disable diagram generation
 4. Click "Analyze Repository"
-5. Download the generated documentation
+5. View and download the generated documentation
 
-## API Usage
+### Via API
+Each component exposes a RESTful API:
 
 ```bash
-curl -X POST "http://localhost:8000/analyze" \
+# Map repository structure
+curl -X POST "http://localhost:8000/repo_mapper" \
   -H "Content-Type: application/json" \
-  -d '{"repo_url": "https://github.com/user/repo", "language": "python"}'
+  -d '{"url": "https://github.com/user/repo"}'
+
+# Analyze code
+curl -X POST "http://localhost:8001/code_analyzer" \
+  -H "Content-Type: application/json" \
+  -d '{"repo_path": "/path/to/repo"}'
+
+# Generate documentation
+curl -X POST "http://localhost:8002/doc_generator" \
+  -H "Content-Type: application/json" \
+  -d '{"repo_map": {...}, "ccg": {...}}'
+
+# Save documentation
+curl -X POST "http://localhost:8003/doc_saver" \
+  -H "Content-Type: application/json" \
+  -d '{"documentation": {...}, "repo_name": "repo-name"}'
 ```
 
-## Output
+##  Sample Outputs
+
+You can find example documentation outputs in the [outputs directory](./outputs/). Here are some notable examples:
+
+- [Recommender System Analysis](./outputs/Wachacha-jay_Recommender_system/docs.md)
+  - Full codebase documentation
+  - Architecture diagrams
+  - API reference
+
+## 🔧 Configuration
+
+### Environment Variables
+```bash
+GITHUB_TOKEN=your_github_token  # For private repos
+PORT=8000                       # API server port
+DEBUG=True                      # Enable debug mode
+```
+
+### Language Detection
+The system supports automatic language detection or manual selection of:
+- Python (*.py)
+- Jac (*.jac)
+- JavaScript (*.js)
+- Java (*.java)
+- C++ (*.cpp, *.hpp)
+- Rust (*.rs)
+- Go (*.go)
+
+##  Development
+
+### Project Structure
+```
+codebase_genius/
+├── README.md
+├── requirements.txt
+├── main.py                    # FastAPI backend server
+├── agents/                    # Python implementation
+│   ├── code_analyzer.py
+│   ├── code_genius.py
+│   ├── doc_genie.py
+│   └── repo_mapper.py
+├── jac_version/              # Pure Jac implementation
+│   ├── app.py               # Jac app runner
+│   ├── genius.jac          # Main Jac implementation
+│   └── jac_utils.py        # Jac utilities
+├── frontend/                 # Python-Jac hybrid frontend
+│   └── app.py              # Streamlit UI
+├── utils/                    # Shared utilities
+│   ├── git_utils.py
+│   └── language_detector.py
+└── outputs/                  # Generated documentation
+    └── Wachacha-jay_Recommender_system/
+        └── docs.md
+```
+
+### Adding New Features
+1. Implement new walker in `genius.jac`
+2. Add corresponding API endpoint
+3. Update frontend to utilize new functionality
+4. Add tests and documentation
+
+## Documentation
 
 Generated documentation includes:
-- Project overview and installation instructions
+- Project overview and setup instructions
 - API reference with function/class relationships
 - Visual diagrams showing code structure
 - Usage examples and best practices
+- Code quality metrics and insights
+
+##  Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+##  License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🔗 Links
+
+- [Project Repository](https://github.com/Wachacha-jay/Generative_AI_Course_Work/Codebase_genius/)
+- [Sample Outputs](./outputs/)
+- [API Documentation](./docs/api.md)
